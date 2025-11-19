@@ -5,8 +5,82 @@
 
 
 ## Modelagem (arrows.app)
-<img width="835" height="511" alt="Untitled graph (3)" src="https://github.com/user-attachments/assets/dc8259c6-ec79-41eb-8024-6ba57231dcc8" />
+<img width="927" height="533" alt="Untitled graph (4)" src="https://github.com/user-attachments/assets/b5ec4390-1583-4265-9b26-fed00158e3a8" />
 
-### Modelagem em cypher (gerada automáticamente)
+### Definindo constraints
 
-    MERGE (Music {id: "int", title: "String", time: "Time"})<-[:RELEASE {date: "Date"}]-({id: "int", name: "String"})<-[:FOLLOW]-({id: "int", name: "String", cpf: "String", email: "String"})-[:LISTEN {rating: "int", nListen: "int"}]->(Music)-[:HAS]->({id: "int", name: "String"})
+- Id's únicos
+
+      // Artista
+        CREATE CONSTRAINT artist_id_unique IF NOT EXISTS
+        FOR (a:Artist)
+        REQUIRE a.id IS UNIQUE;
+        
+        // Usuário
+        CREATE CONSTRAINT user_id_unique IF NOT EXISTS
+        FOR (u:User)
+        REQUIRE u.id IS UNIQUE;
+        
+        // Música
+        CREATE CONSTRAINT music_id_unique IF NOT EXISTS
+        FOR (m:Music)
+        REQUIRE m.id IS UNIQUE;
+        
+        // Gênero
+        CREATE CONSTRAINT genre_id_unique IF NOT EXISTS
+        FOR (g:Genre)
+        REQUIRE g.id IS UNIQUE;
+
+- E-mail e CPF únicos (Usuário)
+
+        CREATE CONSTRAINT user_email_unique IF NOT EXISTS
+        FOR (u:User)
+        REQUIRE u.email IS UNIQUE;
+        
+        CREATE CONSTRAINT user_cpf_unique IF NOT EXISTS
+        FOR (u:User)
+        REQUIRE u.cpf IS UNIQUE;
+
+
+- Name único (Artista e Gênero
+
+        // Artista
+        CREATE CONSTRAINT artist_name_unique IF NOT EXISTS
+        FOR (a:Artist)
+        REQUIRE a.name IS UNIQUE;
+        
+        // Gênero
+        CREATE CONSTRAINT genre_name_unique IF NOT EXISTS
+        FOR (g:Genre)
+        REQUIRE g.name IS UNIQUE;
+
+### Definindo as relações
+
+Os id's devem ser substituidos pelo ID dos nós referentes.
+
+- User - FOLLOW - Artist
+
+        MATCH (u:User {id: $userId})
+        MATCH (a:Artist {id: $artistId})
+        MERGE (u)-[:FOLLOW]->(a);
+
+- User - LISTEN - Music
+
+        MATCH (u:User {id: $userId})
+        MATCH (m:Music {id: $musicId})
+        MERGE (u)-[:LISTEN {rating: $rating, nListen: $nListen}]->(m);
+
+- Artist - RELEASE - Music
+
+        MATCH (a:Artist {id: $artistId})
+        MATCH (m:Music {id: $musicId})
+        MERGE (a)-[:RELEASE {date: $date}]->(m);
+
+
+- Music - HAS - Genre
+
+        MATCH (m:Music {id: $musicId})
+        MATCH (g:Genre {id: $genreId})
+        MERGE (m)-[:HAS]->(g);
+
+
