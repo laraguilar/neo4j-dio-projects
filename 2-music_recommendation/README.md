@@ -167,4 +167,57 @@ Através da IA, gerei uma nova planilha relacionando os usuários com os artista
 <img width="712" height="601" alt="visualisation" src="https://github.com/user-attachments/assets/c98cefec-dd2a-4b7f-b692-ea7cf73fdfbb" />
 
 
+## Resultados
+
+### 1. Playlist Recomendada
+
+A playlist recomendada busca pelas músicas que os "vizinhos" do usuário escutam. Isto é, baseado no que o usuário ouve, encontramos os usuários (vizinhos) que também ouvem aquelas músicas e a partir disso, encontramos o que os vizinhos escutam que o usuário alvo não escuta.
+
+      
+      WITH 'email_do_usuario@exemplo.com' AS targetEmail // define usuário alvo
+      
+      MATCH (me:User {email: targetEmail})-[:LISTEN]->(m:Music)<-[r1:LISTEN]-(other:User) // encontra usuário e seus vizinhos
+      WHERE me <> other AND r1.rating >= 3 
+      WITH me, other, count(m) AS overlap
+      
+      MATCH (other)-[r2:LISTEN]->(rec:Music) // encontra o que os vizinhos andaram ouvindo
+      WHERE NOT (me)-[:LISTEN]->(rec) AND r2.rating >= 4 
+
+      // retorna resultado
+      RETURN rec.title AS Musica,
+             rec.time AS Duracao,
+             collect(DISTINCT other.name)[0..3] AS QuemTambemOuviu,
+             count(other) AS Frequencia, 
+             avg(r2.rating) AS NotaMedia
+      ORDER BY Frequencia DESC, NotaMedia DESC
+      LIMIT 10; 
+
+
+<img width="1093" height="477" alt="image" src="https://github.com/user-attachments/assets/e5f719de-422b-40a9-8784-2ec0bd8632c1" />
+
+
+### 2. Artistas Sugeridos
+
+      WITH 'user1@example.com' AS targetEmail
+
+      // 1. Descobre os gêneros favoritos (Top 3)
+      MATCH (u:User {email: targetEmail})-[r:LISTEN]->(m:Music)-[:HAS]->(g:Genre)
+      WITH u, g, count(r) AS genreScore
+      ORDER BY genreScore DESC
+      LIMIT 3
+      
+      // 2. Encontra artistas desses gêneros através das músicas
+      MATCH (g)<-[:HAS]-(m2:Music)<-[:RELEASE]-(rec:Artist)
+      WHERE NOT (u)-[:FOLLOWS]->(rec)
+      
+      // 3. O TRUQUE ESTÁ AQUI: Agregação
+      // Ao usar 'collect', o Neo4j entende que deve agrupar as linhas pelo Artista
+      RETURN rec.name AS ArtistaSugerido, 
+             collect(DISTINCT g.name) AS GenerosEmComum, // Lista os gêneros sem repetir
+             rec.popularity AS Popularidade,
+             count(m2) AS FaixasNoGenero // Opcional: Mostra quantas músicas desse gênero o artista tem
+      ORDER BY Popularidade DESC
+      LIMIT 5;
+
+<img width="1110" height="292" alt="image" src="https://github.com/user-attachments/assets/5646ea12-0ff8-4415-b6c5-5ada0f08e6c5" />
 
