@@ -134,4 +134,4 @@ id utilizado: "299f52a2-1b1d-4360-aeeb-e253c4e21cff"
         RETURN u, c
         ORDER BY c.createdAt DESC;
 
-![Visualização da Consulta](visualization2.png)
+![Visualização da Consulta](visualisation2.png)
